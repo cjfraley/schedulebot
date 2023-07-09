@@ -19,12 +19,10 @@ else:
 # methods = [method_name for method_name in dir(api) if callable(getattr(api, method_name))]
 api=get_api()
 due_tasks=get_due_tasks()
+
 # due_tasks_with_tag_names=[]
 for task in due_tasks:
     task["tag_names"]=get_task_labels(task)
-
-output_headings=["id","content","do_today","priority","tag_names",'child_order', 'responsible_uid', 'assigned_by_uid', 'date_added', 'checked', 'parent_id', 'day_order', 'due', 'user_id', 'is_deleted', 'sync_id', 'section_id', 'added_by_uid', 'labels', 'project_id','description', 'date_completed', 'in_history', 'has_more_notes', 'collapsed',"tags_to_add"]
-
 
 # due_tasks=sorted(due_tasks, key=itemgetter('priority'), reverse=True)
 priority_split_tasks=[ [] for i in range(5)]
@@ -33,7 +31,7 @@ for task in due_tasks:
     priority_split_tasks[task["priority"]].append(task)
 
 for priority in priority_split_tasks:
-    priority=sorted(priority, key=lambda x: x["due"]["date"], reverse=False)
+    priority=sorted(priority, key=lambda x: x["due"].date, reverse=False)
 
 # sort by priority
     # Sort by due date
@@ -50,6 +48,7 @@ for task in due_tasks:
 #         exit()
 
 with open("test_output.csv", 'w') as csvfile:
+    output_headings=list(due_tasks[0].keys())+["tags_to_add"]
     writer = csv.DictWriter(csvfile, fieldnames=output_headings)
     writer.writeheader()
     for task in due_tasks:
@@ -57,6 +56,8 @@ with open("test_output.csv", 'w') as csvfile:
 # handle_today=[]
 # for task in due_tasks_with_tag_names:
 #     if
+
+rest_api=get_api(sync=False)
 for task in due_tasks:
     if not task["do_today"]:
         if "content" in task:
@@ -64,6 +65,11 @@ for task in due_tasks:
         else:
             print(yaml.dump(task))
         snooze(task)
+        # if task["due"].is_recurring:
+        #     print("task id",task["id"])
+        #     print("Pre snooze:\n",yaml.dump(task))
+        #     print("Post snooze:\n",yaml.dump(rest_api.get_task(task["id"]).__dict__))
+        #     exit()
 api.sync()
 # print(api.items.list())
 # print(methods)
