@@ -10,16 +10,18 @@ from todoist_api_python.api import TodoistAPI
 with open("token.secret","r") as token_file:
     token=token_file.read()
 
-api = todoist.TodoistAPI(token)
-other_api = TodoistAPI(token)
+sync_api = todoist.TodoistAPI(token)
+rest_api = TodoistAPI(token)
 
-def get_api():
-    api.sync()
-    return api
+def get_api(sync=True):
+    if sync:
+        return sync_api
+    else:
+        return rest_api
 
 def get_relevant_td_activities():
-    api.sync()
-    events = api.activity.get()["events"]
+    sync_api.sync()
+    events = sync_api.activity.get()["events"]
     return events
 
 def get_gdrive_service():
@@ -135,29 +137,31 @@ def task_due(task):
 
 def get_task_labels(task, short=True):
     output=[]
-    # print(yaml.dump(task))
     for label in task["labels"]:
-        label_full=api.labels.get_by_id(label)
-        if short:
-            if "name" in label_full:
-                output.append(label_full["name"])
-            else:
-                print("label id",label)
-                print(yaml.dump(label_full))
+        if isinstance(label,str):
+            output.append(label)
         else:
-            output.append(label_full)
+            label_full=sync_api.labels.get_by_id(label)
+            if short:
+                if "name" in label_full:
+                    output.append(label_full["name"])
+                else:
+                    print("label id",label)
+                    print(yaml.dump(label_full))
+            else:
+                output.append(label_full)
     return output
 
 def get_due_tasks():
-    tasks = []
-    for task in api.state['items']:
-        if task_due(task):
-            tasks.append(task.data)
-    return tasks
+    tasks = rest_api.get_tasks(filter="today | overdue")
+    due_tasks = []
+    for task in tasks:
+        due_tasks.append(task.__dict__)
+    return due_tasks
 
 def get_projects():
     projects = []
-    for project in api.state['projects']:
+    for project in sync_api.state['projects']:
         projects.append(project)
     return projects
 
@@ -209,5 +213,10 @@ def what_today(tasks_list=[],poms_booked=0,poms_left_today=4):
         # print("You should do this today:",task["content"])
 
 def snooze(task):
-    delayed_time=(datetime.today()+timedelta(days = 1)).strftime("%Y-%m-%d")
-    other_api.update_task(task_id=task["id"],due_date=delayed_time)
+    if not yaml.dump(task["due"].is_recurring):
+        delayed_time=(datetime.today()+timedelta(days = 1)).strftime("%Y-%m-%d")
+        rest_api.update_task(task_id=task["id"],due_date=delayed_time, recurring=task["due"].is_recurring, due_string=task["due"].string)
+    # elif "starting" not in task["due"].string:
+    else:
+        delayed_time=(datetime.today()+timedelta(days = 1)).strftime("%Y-%m-%d")
+        rest_api.update_task(task_id=task["id"],due_date=delayed_time, recurring=task["due"].is_recurring, due_string=task["due"].string)
