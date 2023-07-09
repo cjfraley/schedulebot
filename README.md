@@ -1,5 +1,8 @@
 # Schedulebot
 
+# Repository Use
+1. Manually deploy `shared_infra.tf`
+
 # Primary goals
 * Enable better tracking and analysis of tasks, completion and time spent
 * Create single workflow for tasks that avoids data replication where unnecessary
