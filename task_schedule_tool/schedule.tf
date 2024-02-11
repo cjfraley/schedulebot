@@ -5,7 +5,7 @@ provider "google" {
 
 data "archive_file" "function_code" {
   type        = "zip"
-  source_dir  = "${path.module}/function"
+  source_dir  = "${path.module}/sched_source"
   output_path = "${path.module}/archive.zip"
 }
 
@@ -15,6 +15,13 @@ resource "google_storage_bucket_object" "function_code" {
   source = "${path.module}/archive.zip"
 }
 
+# resource "google_cloud_run_service" "schedule_bot" {
+#   name = "schedule-bot-dev"
+#   location = "us-central1"
+#   template {
+#     spec 
+#   }
+# }
 resource "google_cloudfunctions2_function" "schedule_bot" {
   name        = "schedule-bot-${var.env}"
   description = "Automatic categorization and delay of todoist tasks"
@@ -31,12 +38,10 @@ resource "google_cloudfunctions2_function" "schedule_bot" {
     }
   }
 
-
-
-    event_trigger {
-        trigger_region = "us-central1" #TODO better handle for this 
-        event_type = "google.cloud.pubsub.topic.v1.messagePublished"
-        pubsub_topic = var.pubsub
-        retry_policy = "RETRY_POLICY_DO_NOT_RETRY"
-    }
+  event_trigger {
+      trigger_region = "us-central1" #TODO better handle for this 
+      event_type = "google.cloud.pubsub.topic.v1.messagePublished"
+      pubsub_topic = var.pubsub
+      retry_policy = "RETRY_POLICY_DO_NOT_RETRY"
+  }
 }

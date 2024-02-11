@@ -182,3 +182,5 @@ terraform.rc
 .terraform.lock.hcl
 
 *.zip
+
+*.whl
