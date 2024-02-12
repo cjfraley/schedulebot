@@ -15,13 +15,16 @@ resource "google_storage_bucket_object" "function_code" {
   source = "${path.module}/archive.zip"
 }
 
-# resource "google_cloud_run_service" "schedule_bot" {
-#   name = "schedule-bot-dev"
-#   location = "us-central1"
-#   template {
-#     spec 
-#   }
-# }
+resource "google_cloud_scheduler_job" "daily_schedule" {
+  name = "daily-schedule-${var.env}"
+  schedule = "0 17 * * *"
+  pubsub_target {
+    # topic.id is the topic's full resource name.
+    topic_name = var.pubsub
+    data       = base64encode("test")
+  }
+}
+
 resource "google_cloudfunctions2_function" "schedule_bot" {
   name        = "schedule-bot-${var.env}"
   description = "Automatic categorization and delay of todoist tasks"
